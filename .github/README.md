@@ -1,5 +1,8 @@
 # Unity Localized App Title
 
+## Diffrence With Master
+Same language supports different regional abbreviations for Android and iOS.
+
 ![Screenshot](Images/Screenshot.png)
 
 **Discord:** https://discord.gg/UJJt549AaV

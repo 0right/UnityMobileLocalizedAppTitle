@@ -17,7 +17,8 @@ namespace LocalizedAppTitleNamespace
 	[System.Serializable]
 	public class LocalizedData
 	{
-		public string LanguageCode = "en";
+		public string AndroidLanguageCode = "en";
+		public string iOSLanguageCode = "en";
 		public string AppName = "My Game";
 		public string AppShortName = "";
 		public Texture2D AndroidIcon, iOSIcon;
@@ -44,7 +45,8 @@ namespace LocalizedAppTitleNamespace
 		private ReorderableList localizedDataDrawer;
 
 		private readonly GUIContent localizeAppIconOniOSLabel = new GUIContent( "Localize App Icon on iOS*", "Icon WON'T change automatically with the system language but it's possible to change it manually via 'LocalizedAppTitle.SetLanguage' function" );
-		private readonly GUIContent languageCodeLabel = new GUIContent( "Language Code", "Note that language sub-codes aren't supported on Android (e.g. 'en-US', use 'en' instead)" );
+		private readonly GUIContent AndroidLanguageCodeLabel = new GUIContent( "Android Language Code", "Note that language sub-codes aren't supported on Android (e.g. 'en-US', use 'en' instead)" );
+		private readonly GUIContent iOSLanguageCodeLabel = new GUIContent( "iOS Language Code", "" );
 		private readonly GUIContent appShortNameLabel = new GUIContent( "App Short Name", "(Optional) (iOS only) Maximum 15 characters" );
 		private readonly GUIContent androidNameResourceLabel = new GUIContent( "\"android:label\" Resource", "Can be learnt by looking at the AndroidManifest.xml file; Unity's default value is 'app_name'" );
 		private readonly GUIContent androidIconResourceLabel = new GUIContent( "\"android:icon\" Resource", "Can be learnt by looking at the AndroidManifest.xml file; Unity's default value is 'app_icon'" );
@@ -174,7 +176,9 @@ namespace LocalizedAppTitleNamespace
 				DefaultLocalizedData = index;
 
 			rect.y += rect.height + SPACE_BETWEEN_INPUT_FIELDS;
-			LocalizedData[index].LanguageCode = EditorGUI.DelayedTextField( rect, languageCodeLabel, LocalizedData[index].LanguageCode );
+			LocalizedData[index].AndroidLanguageCode = EditorGUI.DelayedTextField( rect, AndroidLanguageCodeLabel, LocalizedData[index].AndroidLanguageCode );
+            rect.y += rect.height + SPACE_BETWEEN_INPUT_FIELDS;
+            LocalizedData[index].iOSLanguageCode = EditorGUI.DelayedTextField( rect, iOSLanguageCodeLabel, LocalizedData[index].iOSLanguageCode );
 
 			if( LocalizeAppNameOnAndroid || LocalizeAppNameOniOS )
 			{
@@ -206,7 +210,7 @@ namespace LocalizedAppTitleNamespace
 
 		private float CalculateReorderableListHeight()
 		{
-			int rowCount = 1;
+			int rowCount = 2;
 			if( LocalizeAppNameOnAndroid || LocalizeAppNameOniOS )
 				rowCount += LocalizeAppNameOniOS ? 2 : 1;
 			if( LocalizeAppIconOnAndroid )
@@ -244,12 +248,12 @@ namespace LocalizedAppTitleNamespace
 
 				for( int i = 0; i < LocalizedData.Count; i++ )
 				{
-					string languageCode = LocalizedData[i].LanguageCode;
+					string languageCode = LocalizedData[i].AndroidLanguageCode;
 					int languageSubCodeIndex = languageCode.IndexOf( '-' );
 					if( languageSubCodeIndex > 0 && languageCode[languageSubCodeIndex + 1] != 'r' )
 					{
 						languageCode = string.Concat( languageCode.Substring( 0, languageSubCodeIndex ), "-r", languageCode.Substring( languageSubCodeIndex + 1 ) );
-						Debug.LogWarning( "(LocalizedAppTitle) Converted " + LocalizedData[i].LanguageCode + " to " + languageCode );
+						Debug.LogWarning( "(LocalizedAppTitle) Converted " + LocalizedData[i].AndroidLanguageCode + " to " + languageCode );
 					}
 
 					if( !processedLanguages.Add( languageCode ) )
@@ -348,7 +352,7 @@ namespace LocalizedAppTitleNamespace
 
 			foreach( LocalizedData localizedData in Settings.Instance.LocalizedData )
 			{
-				if( string.IsNullOrEmpty( localizedData.LanguageCode ) )
+				if( string.IsNullOrEmpty( localizedData.AndroidLanguageCode ) || string.IsNullOrEmpty(localizedData.iOSLanguageCode))
 					throw new System.Exception( "(LocalizedAppTitle) 'Language Code' isn't specified for a language" );
 			}
 
@@ -359,7 +363,7 @@ namespace LocalizedAppTitleNamespace
 				foreach( LocalizedData localizedData in Settings.Instance.LocalizedData )
 				{
 					if( string.IsNullOrEmpty( localizedData.AppName ) )
-						throw new System.Exception( "(LocalizedAppTitle) 'App Name' isn't specified for language: " + localizedData.LanguageCode );
+						throw new System.Exception( "(LocalizedAppTitle) 'App Name' isn't specified for language: " + localizedData.AndroidLanguageCode + " and " + localizedData.iOSLanguageCode );
 				}
 
 				serializedPlayerSettings.LocalizedAppName = true;
@@ -372,7 +376,7 @@ namespace LocalizedAppTitleNamespace
 				{
 					Texture2D icon = ( target == BuildTarget.Android ) ? localizedData.AndroidIcon : localizedData.iOSIcon;
 					if( !icon )
-						throw new System.Exception( "(LocalizedAppTitle) 'Icon' isn't specified for language: " + localizedData.LanguageCode );
+						throw new System.Exception( "(LocalizedAppTitle) 'Icon' isn't specified for language: " + localizedData.AndroidLanguageCode + " and " + localizedData.iOSLanguageCode);
 				}
 
 				serializedPlayerSettings.LocalizedAppIcons = true;
@@ -466,15 +470,15 @@ namespace LocalizedAppTitleNamespace
 
 				foreach( LocalizedData localizedData in Settings.Instance.LocalizedData )
 				{
-					if( !processedLanguages.Add( localizedData.LanguageCode ) )
+					if( !processedLanguages.Add( localizedData.iOSLanguageCode ) )
 					{
-						Debug.LogWarning( "(LocalizedAppTitle) Language was already added, skipping: " + localizedData.LanguageCode );
+						Debug.LogWarning( "(LocalizedAppTitle) Language was already added, skipping: " + localizedData.iOSLanguageCode );
 						continue;
 					}
 
 					if( Settings.Instance.LocalizeAppNameOniOS )
 					{
-						string localizationFolder = Path.Combine( buildPath, localizedData.LanguageCode + ".lproj" );
+						string localizationFolder = Path.Combine( buildPath, localizedData.iOSLanguageCode + ".lproj" );
 						string localizedPlistPath = Path.Combine( localizationFolder, "InfoPlist.strings" );
 
 						// Create InfoPlist.strings files for localized app names
@@ -510,13 +514,13 @@ namespace LocalizedAppTitleNamespace
 						// Create localized icons
 						// Credit: https://stackoverflow.com/questions/51949430/changing-alternate-icon-for-ipad
 						// Credit (MIT-License): https://github.com/kyubuns/AppIconChangerUnity/blob/4c608cce17aa824f479a76386cc6008bdfd388f0/Assets/Plugins/AppIconChanger/Editor/PostProcesser.cs
-						string iconsFolderRelativePath = "LocalizedIcon_" + localizedData.LanguageCode;
+						string iconsFolderRelativePath = "LocalizedIcon_" + localizedData.iOSLanguageCode;
 						string iconsFolderFullPath = Path.Combine( buildPath, iconsFolderRelativePath );
 						Directory.CreateDirectory( iconsFolderFullPath );
 
 						for( int i = 0; i < iconsFilenames.Length; i++ )
 						{
-							string iconFilename = "LocalizedIcon_" + localizedData.LanguageCode + iconsFilenames[i];
+							string iconFilename = "LocalizedIcon_" + localizedData.iOSLanguageCode + iconsFilenames[i];
 							string iconRelativePath = iconsFolderRelativePath + "/" + iconFilename;
 							string iconFullPath = Path.Combine( iconsFolderFullPath, iconFilename );
 
@@ -543,7 +547,7 @@ namespace LocalizedAppTitleNamespace
 
 				if( Settings.Instance.LocalizeAppNameOniOS )
 				{
-					rootDict.SetString( "CFBundleDevelopmentRegion", defaultLocalizedData.LanguageCode );
+					rootDict.SetString( "CFBundleDevelopmentRegion", defaultLocalizedData.iOSLanguageCode );
 					rootDict.SetString( "CFBundleDisplayName", defaultLocalizedData.AppName );
 					rootDict.SetString( "CFBundleName", defaultLocalizedData.AppShortName );
 					rootDict.SetBoolean( "LSHasLocalizedDisplayName ", true );
@@ -553,8 +557,8 @@ namespace LocalizedAppTitleNamespace
 					PlistElementArray languagesArray = rootDict.GetOrCreateArray( "CFBundleLocalizations" );
 					foreach( LocalizedData localizedData in Settings.Instance.LocalizedData )
 					{
-						if( processedLanguages.Add( localizedData.LanguageCode ) )
-							languagesArray.AddStringIfNotExists( localizedData.LanguageCode );
+						if( processedLanguages.Add( localizedData.iOSLanguageCode ) )
+							languagesArray.AddStringIfNotExists( localizedData.iOSLanguageCode );
 					}
 
 					processedLanguages.Clear();
@@ -574,11 +578,11 @@ namespace LocalizedAppTitleNamespace
 
 					foreach( LocalizedData localizedData in Settings.Instance.LocalizedData )
 					{
-						if( !processedLanguages.Add( localizedData.LanguageCode ) )
+						if( !processedLanguages.Add( localizedData.iOSLanguageCode ) )
 							continue;
 
-						bundleAlternateIconsDict.CreateDict( "LocalizedIcon_" + localizedData.LanguageCode ).CreateBundleIconFilesDict( "LocalizedIcon_" + localizedData.LanguageCode + "_iPhone" );
-						bundleAlternateIconsDictIPad.CreateDict( "LocalizedIcon_" + localizedData.LanguageCode ).CreateBundleIconFilesDict( "LocalizedIcon_" + localizedData.LanguageCode + "_iPad", "LocalizedIcon_" + localizedData.LanguageCode + "_iPadPro" );
+						bundleAlternateIconsDict.CreateDict( "LocalizedIcon_" + localizedData.iOSLanguageCode ).CreateBundleIconFilesDict( "LocalizedIcon_" + localizedData.iOSLanguageCode + "_iPhone" );
+						bundleAlternateIconsDictIPad.CreateDict( "LocalizedIcon_" + localizedData.iOSLanguageCode ).CreateBundleIconFilesDict( "LocalizedIcon_" + localizedData.iOSLanguageCode + "_iPad", "LocalizedIcon_" + localizedData.iOSLanguageCode + "_iPadPro" );
 					}
 
 					processedLanguages.Clear();
@@ -649,9 +653,9 @@ namespace LocalizedAppTitleNamespace
 			array.AddString( value );
 		}
 #endif
-	}
+    }
 
-	internal static class TextureScale
+    internal static class TextureScale
 	{
 		private const string DOWNSCALED_ICON_ASSET_TEMP_PATH = "Assets/LocalizedAppTitleScaledIcon.png";
 
